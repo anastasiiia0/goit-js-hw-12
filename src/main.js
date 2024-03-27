@@ -2,10 +2,7 @@ import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 
 import { searchImages } from './js/pixabay-api.js';
-import {
-  renderGallery,
-  // showEndCollectionMessage,
-} from './js/render-functions.js';
+import { renderGallery } from './js/render-functions.js';
 
 const form = document.querySelector('.form');
 const loader = document.querySelector('.loader');
@@ -30,12 +27,7 @@ async function submitForm(event) {
   userInput = event.target.search.value.trim();
   if (userInput === '') {
     removeLoader();
-    iziToast.error({
-      title: 'Error',
-      position: 'topRight',
-      message: 'Please enter a search word',
-    });
-
+    showErrorMessage('Please enter a search word');
     return;
   }
 
@@ -43,12 +35,16 @@ async function submitForm(event) {
     const images = await searchImages(userInput, pageIterator, limit);
     renderGallery(images);
     addLoadButton();
+
+    if (images.totalHits <= limit) {
+      removeLoadButton();
+      showInfoMessage(
+        "We're sorry, but you've reached the end of search results."
+      );
+      return;
+    }
   } catch (error) {
-    iziToast.error({
-      title: 'Error',
-      position: 'topRight',
-      message: 'Error fetching images',
-    });
+    showErrorMessage('Error fetching images');
   } finally {
     removeLoader();
     event.target.reset();
@@ -62,32 +58,42 @@ async function clickLoadButton() {
 
   try {
     const images = await searchImages(userInput, pageIterator, limit);
+    renderGallery(images);
 
     if (pageIterator * limit >= images.totalHits) {
       removeLoadButton();
-      iziToast.info({
-        title: 'Info',
-        position: 'topRight',
-        message: "We're sorry, but you've reached the end of search results.",
-      });
-    } else {
-      addLoadButton();
-      renderGallery(images);
-
-      const galleryCardHeight =
-        gallery.firstElementChild.getBoundingClientRect().height;
-
-      window.scrollBy({ top: galleryCardHeight * 2, behavior: 'smooth' });
+      showInfoMessage(
+        "We're sorry, but you've reached the end of search results."
+      );
+      return;
     }
+    addLoadButton();
+
+    const galleryCardHeight =
+      gallery.firstElementChild.getBoundingClientRect().height;
+
+    window.scrollBy({ top: galleryCardHeight * 2, behavior: 'smooth' });
   } catch (error) {
-    iziToast.error({
-      title: 'Error',
-      position: 'topRight',
-      message: 'Error fetching images',
-    });
+    showErrorMessage('Error fetching images');
   } finally {
     removeLoader();
   }
+}
+
+function showErrorMessage(message) {
+  iziToast.error({
+    title: 'Error',
+    position: 'topRight',
+    message: `${message}`,
+  });
+}
+
+function showInfoMessage(message) {
+  iziToast.info({
+    title: 'Info',
+    position: 'topRight',
+    message: `${message}`,
+  });
 }
 
 function addLoader() {

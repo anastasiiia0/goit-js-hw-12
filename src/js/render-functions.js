@@ -39,5 +39,3 @@ export function renderGallery(images) {
 
   imgList.refresh();
 }
-
-// export function showEndCollectionMessage() {}
